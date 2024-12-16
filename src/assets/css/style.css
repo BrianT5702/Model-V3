@@ -1,0 +1,164 @@
+/* src/assets/css/style.css */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    height: 100vh; /* Ensure the body takes up the full viewport height */
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Main 3D View occupies remaining space */
+#main-3d-view {
+    flex: 1; /* Take up all remaining space */
+    width: 100%;
+    background-color: #f9f9f9; /* Background for visualization */
+}
+
+/* Floating 3D View */
+#floating-3d-view {
+    position: absolute; /* Required for dragging */
+    top: 10px; /* Initial position */
+    left: 10px; /* Initial position */
+    width: 300px;
+    height: 200px;
+    border: 1px solid #ccc;
+    background-color: white;
+    z-index: 100; /* Ensure it stays above other elements */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    resize: both;
+    overflow: hidden;
+}
+
+/* Drag Handle */
+.drag-handle {
+    background-color: #ddd;
+    color: #333;
+    padding: 5px;
+    cursor: grab;
+    text-align: center;
+    font-weight: bold;
+    user-select: none; /* Prevent text selection while dragging */
+    z-index: 200; /* Ensure it’s above other elements */
+}
+
+.dragging {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
+}
+
+/* 3D Content */
+#floating-3d-content {
+    width: 100%;
+    height: calc(100% - 30px); /* Adjust height to exclude the drag handle */
+    overflow: hidden; /* Prevent scrollbars in the 3D view */
+}
+
+/* Plan Viewer Container */
+#plan-viewer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 10px;
+    width: 100%;
+    height: 100%;
+    max-width: 900px; /* Maximum width of the viewer */
+    max-height: 700px; /* Maximum height of the viewer */
+    margin: auto;
+    overflow: hidden; /* Hide overflow if the plan is too large */
+}
+
+/* Center the plan content within the SVG container */
+/* Unified Plan Styles */
+.plan {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #fafafa;
+    border: 1px solid #ccc;
+}
+
+.plan svg {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    transform-origin: center; /* Scale from center */
+}
+
+/* Plans Container */
+#plans-container {
+    position: relative; /* Enable relative positioning for child elements */
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Input Panel at the top */
+#input-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 10px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #ddd; /* Separator line below the panel */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* Shadow for separation */
+}
+
+#input-panel label,
+#input-panel input,
+#input-panel button {
+    margin: 5px;
+}
+
+/* Plans Tabs */
+#plans-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+#plans-tabs button {
+    margin: 0 5px;
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+#plans-tabs button:hover {
+    background-color: #e0e0e0;
+}
+
+#plans-tabs button.active {
+    background-color: #87CEBA; /* Light blue color */
+    color: white;
+    border-color: #5F9EA0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Hidden Class */
+.hidden {
+    display: none;
+}
+
+/* Dimension text styling */
+svg text {
+    font-family: Arial, sans-serif;
+    fill: blue; /* Dimension text color */
+    font-size: 14px;
+}
+
+svg line[stroke-dasharray] {
+    stroke: gray; /* Dimension line color */
+}
