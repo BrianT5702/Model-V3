@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Model Builder</title>
+  <title>2D/3D Building Design</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -31,7 +31,6 @@
     <!-- Edit Mode Controls -->
     <div id="edit-controls" class="hidden">
       <button id="add-wall-button">Draw Wall</button>
-      <button id="add-door-button">Add Door</button>
       <button id="exit-edit-mode">Exit Edit Mode</button>
     </div>
     <button id="enable-edit-mode">Enable Edit Mode</button>
@@ -50,11 +49,6 @@
         <button id="show-ceiling-plan">Ceiling Plan</button>
       </div>
       <div id="plan-viewer">
-        <div id="floating-3d-view">
-          <div class="drag-handle">Drag Here</div>
-          <div id="floating-3d-content"></div>
-      </div>
-      
         <svg id="wall-plan" class="plan hidden"></svg>
         <svg id="floor-plan" class="plan hidden"></svg>
         <svg id="ceiling-plan" class="plan hidden"></svg>

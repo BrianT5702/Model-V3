@@ -7,15 +7,16 @@ if (!window.__APP_INITIALIZED__) {
   window.__APP_INITIALIZED__ = true;
 
   document.addEventListener('DOMContentLoaded', () => {
-      const buildingModel = new BuildingModel();
-      const sceneController = new SceneController();
+    const buildingModel = new BuildingModel();
+    const sceneController = new SceneController();
+    const uiController = new UIController(sceneController);
+    console.log('Application initialized successfully.');
 
       // Attach the renderer to the main 3D view container
       console.log('Attaching renderer to main-3d-view');
       sceneController.sceneView.attachToContainer('main-3d-view');
 
       // Initialize other controllers
-      const uiController = new UIController(sceneController);
       const planController = new PlanController(sceneController, buildingModel);
 
       // Animation loop
