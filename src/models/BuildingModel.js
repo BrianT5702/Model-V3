@@ -24,9 +24,9 @@ export default class BuildingModel {
 
   // Get all walls in the building
   getWalls() {
-    return this.walls;
+    return this.walls || [];
   }
-
+  
   // Get the floor boundary (used for floor generation in 2D and 3D)
   getFloorBoundary() {
     return { x: 0, y: 0, width: this.length, height: this.width };

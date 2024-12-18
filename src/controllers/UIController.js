@@ -39,27 +39,28 @@ export default class UIController {
 
     // Generate Building
     generateButton.addEventListener('click', () => {
+      const wallPlan = document.getElementById('wall-plan');
+      if (!wallPlan) {
+          alert('Error: Wall plan is not initialized.');
+          return;
+      }
+  
+      // Existing logic for generating the building
       const length = parseFloat(lengthInput.value);
       const width = parseFloat(widthInput.value);
       const height = parseFloat(heightInput.value);
       const thickness = parseFloat(thicknessInput.value);
-
+  
       if (!Utils.validateInputs(length, width, height, thickness)) {
-        alert('Please provide valid dimensions (positive numbers).');
-        return;
+          const errorContainer = document.getElementById('error-container');
+          errorContainer.textContent = 'Please provide valid dimensions (positive numbers).';
+          errorContainer.style.display = 'block';
+          return;
       }
-
-      this.buildingModel.reset();
-      this.buildingModel.length = length;
-      this.buildingModel.width = width;
-      this.buildingModel.height = height;
-      this.buildingModel.thickness = thickness;
-
-      this.sceneController.createBuilding(length, width, height, thickness);
+  
       this.planController.setDimensions(length, width);
-      this.planController.drawWallPlan();
-      console.log('Building generated successfully.');
-    });
+      this.sceneController.createBuilding(length, width, height, thickness);
+  });
 
     // Toggle between 2D and 3D views
     viewPlanButton.addEventListener('click', () => {
