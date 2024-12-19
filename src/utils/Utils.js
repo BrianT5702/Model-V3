@@ -17,3 +17,10 @@ export function syncModels() {
 
 export const SCALING_FACTOR = 25; // Scale factor: 1 meter = 25 units
 export const INTERSECTION_THRESHOLD = 1e-1; // Tolerance for detecting "near" intersections
+
+export const TEXT_STYLE = {
+  fill: 'blue',       // Color of the text
+  fontSize: '12',     // Font size
+  fontFamily: 'Arial', // Font family
+  textAnchor: 'middle' // Text alignment
+};
