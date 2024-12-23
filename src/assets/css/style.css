@@ -162,3 +162,48 @@ svg text {
 svg line[stroke-dasharray] {
     stroke: gray; /* Dimension line color */
 }
+
+/* Wall Line */
+.wall-line {
+    stroke: black;
+    stroke-width: 2;
+    transition: stroke 0.2s;
+}
+
+/* Highlight selected wall line */
+.selected-line {
+    stroke: red;
+    stroke-width: 3;
+    cursor: pointer;
+}
+
+/*draw wall*/
+#done-drawing-button {
+    background-color: #87CEBA;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+#done-drawing-button:hover {
+    background-color: #5F9EA0;
+}
+
+/* Disable text selection */
+.no-select {
+    user-select: none; /* Prevent text selection */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+}
+
+#remove-line-button {
+    transition: transform 0.2s ease;
+}
+
+#remove-line-button:hover {
+    transform: scale(1.1); /* Slightly enlarge on hover */
+    background: #d32f2f; /* Darker red on hover */
+}

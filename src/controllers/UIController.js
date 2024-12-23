@@ -67,13 +67,19 @@ export default class UIController {
       this.is2DPlanVisible = !this.is2DPlanVisible;
       const plansContainer = document.getElementById('plans-container');
       const main3DView = document.getElementById('main-3d-view');
-
+  
       if (this.is2DPlanVisible) {
-        plansContainer.classList.remove('hidden');
-        main3DView.classList.add('hidden');
+          plansContainer.classList.remove('hidden');
+          main3DView.classList.add('hidden');
+  
+          // Disable text selection in 2D view
+          plansContainer.classList.add('no-select');
       } else {
-        plansContainer.classList.add('hidden');
-        main3DView.classList.remove('hidden');
+          plansContainer.classList.add('hidden');
+          main3DView.classList.remove('hidden');
+  
+          // Enable text selection when leaving 2D view
+          plansContainer.classList.remove('no-select');
       }
     });
 

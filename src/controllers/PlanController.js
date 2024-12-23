@@ -16,6 +16,7 @@ export default class PlanController {
       
         // Attach resize listener
         this.initializeResizeListener();
+        this.initializeEditWallButton();
       }
 
   // Set the dimensions of the plan
@@ -26,28 +27,28 @@ export default class PlanController {
   }
 
   updateDimensions(svgElement, planWidth, planHeight) {
-    // Clear existing dimensions
-    const existingDimensions = svgElement.querySelectorAll('.dimension');
-    existingDimensions.forEach((dim) => dim.remove());
+    // Clear existing bounding box dimensions
+    const boundingBoxDimensions = svgElement.querySelectorAll('.dimension.bounding-box');
+    boundingBoxDimensions.forEach((dim) => dim.remove());
 
     const offset = 20; // Space for dimensions
 
-    // Top dimension
-    this.addDimension(svgElement, 0, -offset, planWidth, -offset, `${this.buildingModel.length.toFixed(2)} m`);
+    // Add bounding box dimensions
+    const topDim = this.addDimension(svgElement, 0, -offset, planWidth, -offset, `${this.buildingModel.length.toFixed(2)} m`, false);
+    const rightDim = this.addDimension(svgElement, planWidth + offset, 0, planWidth + offset, planHeight, `${this.buildingModel.width.toFixed(2)} m`, true);
+    const bottomDim = this.addDimension(svgElement, 0, planHeight + offset, planWidth, planHeight + offset, `${this.buildingModel.length.toFixed(2)} m`, false);
+    const leftDim = this.addDimension(svgElement, -offset, 0, -offset, planHeight, `${this.buildingModel.width.toFixed(2)} m`, true);
 
-    // Right dimension
-    this.addDimension(svgElement, planWidth + offset, 0, planWidth + offset, planHeight, `${this.buildingModel.width.toFixed(2)} m`, true);
+    // Add bounding-box class
+    if (topDim) topDim.classList.add('bounding-box');
+    if (rightDim) rightDim.classList.add('bounding-box');
+    if (bottomDim) bottomDim.classList.add('bounding-box');
+    if (leftDim) leftDim.classList.add('bounding-box');
 
-    // Bottom dimension
-    this.addDimension(svgElement, 0, planHeight + offset, planWidth, planHeight + offset, `${this.buildingModel.length.toFixed(2)} m`);
-
-    // Left dimension
-    this.addDimension(svgElement, -offset, 0, -offset, planHeight, `${this.buildingModel.width.toFixed(2)} m`, true);
-
-    console.log('Dimensions updated.');
+    console.log('Bounding box dimensions updated.');
   }
   
-  updateWallDimensions(intersectionPoints = []) {
+  updateWallDimensions() {
     console.log('Updating wall dimensions...');
     const svgElement = this.planElement; // Reference to the wall-plan SVG
     if (!svgElement) {
@@ -55,78 +56,26 @@ export default class PlanController {
         return;
     }
 
-    // Clear existing dimension elements
-    const existingDimensions = svgElement.querySelectorAll('.dimension');
-    existingDimensions.forEach((dim) => dim.remove());
+    // Clear existing wall-specific dimensions
+    const wallDimensions = svgElement.querySelectorAll('.dimension.wall');
+    wallDimensions.forEach((dim) => dim.remove());
 
     const walls = this.buildingModel.getWalls();
 
-    // Iterate over each wall
+    // Iterate over each wall and redraw its dimensions
     walls.forEach((wall) => {
-        const isAffected = intersectionPoints.some((point) =>
-            this.isPointOnWall(point, wall)
-        );
-
-        if (isAffected) {
-            this.drawSplitDimensions(svgElement, wall, intersectionPoints);
-        } else {
-          const wallLength = this.calculateLineLength(wall.startX, wall.startZ, wall.endX, wall.endZ);
-          this.addDimension(
-              this.planElement,
-              wall.startX * SCALING_FACTOR,
-              wall.startZ * SCALING_FACTOR,
-              wall.endX * SCALING_FACTOR,
-              wall.endZ * SCALING_FACTOR,
-              `${wallLength} m`
-          );
-          
-        }
+        const wallLength = this.calculateLineLength(wall.startX, wall.startZ, wall.endX, wall.endZ);
+        this.addDimension(
+            this.planElement,
+            wall.startX * SCALING_FACTOR,
+            wall.startZ * SCALING_FACTOR,
+            wall.endX * SCALING_FACTOR,
+            wall.endZ * SCALING_FACTOR,
+            `${wallLength} m`
+        ).classList.add('wall');
     });
 
-    console.log('Wall dimensions updated.');  
-  }
-
-  addDimensionWithLabel(svgElement, x1, y1, x2, y2, label) {
-    // Add dimension line
-    const dimensionLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    dimensionLine.setAttribute('x1', x1);
-    dimensionLine.setAttribute('y1', y1);
-    dimensionLine.setAttribute('x2', x2);
-    dimensionLine.setAttribute('y2', y2);
-    dimensionLine.setAttribute('stroke', 'gray');
-    dimensionLine.setAttribute('stroke-dasharray', '5,5');
-    svgElement.appendChild(dimensionLine);
-
-    // Add measurement text
-    const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2;
-
-    const dimensionText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    dimensionText.setAttribute('x', midX);
-    dimensionText.setAttribute('y', midY - 10); // Position above the line
-    dimensionText.setAttribute('fill', TEXT_STYLE.fill);
-    dimensionText.setAttribute('font-size', TEXT_STYLE.fontSize);
-    dimensionText.setAttribute('font-family', TEXT_STYLE.fontFamily);
-    dimensionText.setAttribute('text-anchor', TEXT_STYLE.textAnchor);
-    dimensionText.textContent = label;
-
-    svgElement.appendChild(dimensionText);
-  }
-
-  addDimensions(svgElement, planWidth, planHeight) {
-    const offset = 20; // Space between the dimensions and the plan boundary
-
-    // Top dimension
-    this.addDimension(svgElement, 0, -offset, planWidth, -offset, `${this.buildingModel.length.toFixed(2)} m`);
-
-    // Right dimension
-    this.addDimension(svgElement, planWidth + offset, 0, planWidth + offset, planHeight, `${this.buildingModel.width.toFixed(2)} m`, true);
-
-    // Bottom dimension
-    this.addDimension(svgElement, 0, planHeight + offset, planWidth, planHeight + offset, `${this.buildingModel.length.toFixed(2)} m`);
-
-    // Left dimension
-    this.addDimension(svgElement, -offset, 0, -offset, planHeight, `${this.buildingModel.width.toFixed(2)} m`, true);
+    console.log('Wall dimensions updated.');
   }
 
   drawSplitDimensions(svgElement, wall, intersectionPoints) {
@@ -174,68 +123,36 @@ export default class PlanController {
     return length.toFixed(2); // Return length with 2 decimal places  
   }
 
-  clampToBoundary(x, y) {
-    const planWidth = this.buildingModel.length * SCALING_FACTOR;
-    const planHeight = this.buildingModel.width * SCALING_FACTOR;
+  drawWallDimensions() {
+    // Get all walls from the BuildingModel
+    const walls = this.buildingModel.getWalls();
 
-    // Clamp coordinates within the boundaries
-    const clampedX = Math.min(Math.max(x, 0), planWidth);
-    const clampedY = Math.min(Math.max(y, 0), planHeight);
-
-    return { x: clampedX, y: clampedY };
-  }
-
-  drawWallDimensions(svgElement, wall, wallsToCheck, orientation) {
-    const { start, end } = wall;
-    const isVertical = orientation === 'vertical';
-    const intersections = this.detectIntersectionsOnWall(wallsToCheck, start, end);
-    intersections.sort((a, b) => (isVertical ? a.y - b.y : a.x - b.x));
-  
-    let prevCoord = isVertical ? start.y : start.x;
-  
-    // Draw dimensions for split segments
-    intersections.forEach((point) => {
-      const currentCoord = isVertical ? point.y : point.x;
-      const segmentLength = ((currentCoord - prevCoord) / SCALING_FACTOR).toFixed(2);
-  
-      this.drawDimensionLine(
-        svgElement,
-        isVertical ? start.x - 20 : prevCoord,
-        isVertical ? prevCoord : start.y - 20,
-        isVertical ? start.x - 20 : currentCoord,
-        isVertical ? currentCoord : start.y - 20,
-        `${segmentLength} m`,
-        isVertical
-      );
-      prevCoord = currentCoord;
-    });
-  
-    // Draw the remaining dimension to the edge
-    const finalCoord = isVertical ? end.y : end.x;
-    const finalSegmentLength = ((finalCoord - prevCoord) / SCALING_FACTOR).toFixed(2);
-    this.drawDimensionLine(
-      svgElement,
-      isVertical ? start.x - 20 : prevCoord,
-      isVertical ? prevCoord : start.y - 20,
-      isVertical ? start.x - 20 : finalCoord,
-      isVertical ? finalCoord : start.y - 20,
-      `${finalSegmentLength} m`,
-      isVertical
-    );
-  
-    // If no intersections, show full dimension
-    if (intersections.length === 0) {
-      const fullLength = ((finalCoord - (isVertical ? start.y : start.x)) / SCALING_FACTOR).toFixed(2);
-      this.drawDimensionLine(
-        svgElement,
-        isVertical ? start.x - 20 : start.x,
-        isVertical ? start.y : start.y - 20,
-        isVertical ? start.x - 20 : end.x,
-        isVertical ? end.y : start.y - 20,
-        `${fullLength} m`,
-        isVertical
-      );
+    if (!walls || walls.length === 0) {
+        console.log('No walls found. No dimensions to draw.');
+        return;
     }
+
+    // Iterate over all walls and draw dimensions
+    walls.forEach(wall => {
+        const wallLength = this.calculateLineLength(
+            wall.startX,
+            wall.startZ,
+            wall.endX,
+            wall.endZ
+        );
+
+        // Add dimension line
+        this.addDimension(
+            this.planElement,
+            wall.startX * SCALING_FACTOR,
+            wall.startZ * SCALING_FACTOR,
+            wall.endX * SCALING_FACTOR,
+            wall.endZ * SCALING_FACTOR,
+            `${wallLength.toFixed(2)} m`
+        );
+    });
+
+    console.log('Dimensions drawn for all walls.');
   }
   
   // Enable edit mode for the 2D plan
@@ -255,11 +172,23 @@ export default class PlanController {
   // Start drawing a wall
   startDrawingWall() {
     if (!this.buildingModel.length || !this.buildingModel.width) {
-        alert('Please set valid plan dimensions before drawing walls.');
-        return;
-    }
+      alert('Please set valid plan dimensions before drawing walls.');
+      return;
+  }
 
-    this.currentAction = 'draw-wall';
+  if (this.currentAction === 'draw-wall') {
+      this.exitDrawingWall(); // Only explicitly called when "Done Drawing" is clicked
+      const addWallButton = document.getElementById('add-wall-button');
+      if (addWallButton) addWallButton.textContent = 'Draw Wall';
+      this.currentAction = null;
+      console.log('Exited wall drawing mode.');
+      return;
+  }
+
+  this.currentAction = 'draw-wall';
+  const addWallButton = document.getElementById('add-wall-button');
+  if (addWallButton) addWallButton.textContent = 'Done Drawing';
+
     let startX = null;
     let startY = null;
     let tempLine = null;
@@ -278,14 +207,13 @@ export default class PlanController {
 
     const onMouseDown = (event) => {
         const { x, y } = getMousePosition(event);
-
         const clampedStart = this.clampToBoundary(x, y);
 
         if (startX === null && startY === null) {
             startX = clampedStart.x;
             startY = clampedStart.y;
 
-            // Create temporary line for actual drawing
+            // Create a temporary line for drawing
             tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             tempLine.setAttribute('x1', startX);
             tempLine.setAttribute('y1', startY);
@@ -295,7 +223,7 @@ export default class PlanController {
             tempLine.setAttribute('stroke-dasharray', '5,5');
             this.planElement.appendChild(tempLine);
 
-            // Create guide line for straight line indication
+            // Create guide line for snapping visualization
             guideLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             guideLine.setAttribute('x1', startX);
             guideLine.setAttribute('y1', startY);
@@ -310,22 +238,16 @@ export default class PlanController {
             const endX = endClamped.x;
             const endY = endClamped.y;
 
-            this.addWall(startX, startY, endX, endY);
-
-            // Remove temporary and guide lines
-            if (tempLine) this.planElement.removeChild(tempLine);
-            if (guideLine) this.planElement.removeChild(guideLine);
-
-            startX = null;
-            startY = null;
+            if (startX !== endX || startY !== endY) {
+                this.addPermanentLine(startX, startY, endX, endY);
+                this.addWall(startX, startY, endX, endY);
+            }
         }
     };
 
     const onMouseMove = (event) => {
         if (startX !== null && startY !== null) {
             const { x, y } = getMousePosition(event);
-
-            // Apply boundary restriction to the line's end
             let clampedEnd = this.clampToBoundary(x, y);
 
             // Check snapping to straight alignment
@@ -338,20 +260,17 @@ export default class PlanController {
                 alignedY = startY; // Snap to horizontal
             }
 
-            // Check snapping to nearest wall
             const nearestWallSnap = this.getNearestWallSnap(alignedX, alignedY, WALL_SNAP_THRESHOLD);
             if (nearestWallSnap) {
                 alignedX = nearestWallSnap.x;
                 alignedY = nearestWallSnap.y;
             }
 
-            // Update temporary line
             if (tempLine) {
                 tempLine.setAttribute('x2', alignedX);
                 tempLine.setAttribute('y2', alignedY);
             }
 
-            // Update guide line
             if (guideLine) {
                 guideLine.setAttribute('x2', alignedX);
                 guideLine.setAttribute('y2', alignedY);
@@ -365,9 +284,25 @@ export default class PlanController {
     this.exitDrawingWall = () => {
         this.planElement.removeEventListener('mousedown', onMouseDown);
         this.planElement.removeEventListener('mousemove', onMouseMove);
-        if (tempLine) this.planElement.removeChild(tempLine);
-        if (guideLine) this.planElement.removeChild(guideLine);
+
+        if (tempLine && this.planElement.contains(tempLine)) {
+            this.planElement.removeChild(tempLine);
+        }
+
+        console.log('Exited wall drawing mode.');
+        this.currentAction = null; // Ensure the state is reset
     };
+  }
+
+  clampToBoundary(x, y) {
+    const planWidth = this.buildingModel.length * SCALING_FACTOR;
+    const planHeight = this.buildingModel.width * SCALING_FACTOR;
+
+    // Clamp coordinates within the boundaries
+    const clampedX = Math.min(Math.max(x, 0), planWidth);
+    const clampedY = Math.min(Math.max(y, 0), planHeight);
+
+    return { x: clampedX, y: clampedY };
   }
 
   getNearestWallSnap(x, y, threshold) {
@@ -394,17 +329,12 @@ export default class PlanController {
     const clampedStart = this.clampToBoundary(startX, startY);
     const clampedEnd = this.clampToBoundary(endX, endY);
 
+    // Convert 2D coordinates to 3D
     const startCoords = this.convertTo3DCoordinates(clampedStart.x, clampedStart.y);
     const endCoords = this.convertTo3DCoordinates(clampedEnd.x, clampedEnd.y);
 
-    const newLine = {
-        startX: startCoords.x,
-        startZ: startCoords.z,
-        endX: endCoords.x,
-        endZ: endCoords.z,
-    };
-
     const wallData = {
+        id: `wall-${Date.now()}-${Math.random().toString(16).slice(2)}`, // Unique ID
         startX: startCoords.x,
         startZ: startCoords.z,
         endX: endCoords.x,
@@ -413,10 +343,8 @@ export default class PlanController {
         height: parseFloat(this.wallHeightInput.value) || 3,
     };
 
-    console.log("Wall Data:", wallData);
-
     // Add the wall to the BuildingModel
-    this.buildingModel.addWall(
+    const newWall = this.buildingModel.addWall(
         wallData.startX, wallData.startZ,
         wallData.endX, wallData.endZ,
         wallData.width, wallData.height
@@ -429,37 +357,38 @@ export default class PlanController {
         console.warn('SceneController is not available or updateScene method is missing.');
     }
 
-    this.updateWallDimensions([]);
-    this.addPermanentLine(clampedStart.x, clampedStart.y, clampedEnd.x, clampedEnd.y);
+    // Create the corresponding line element
+    const line = this.addPermanentLine(clampedStart.x, clampedStart.y, clampedEnd.x, clampedEnd.y);
+
+    // Link the line to the wall by adding a custom attribute
+    line.setAttribute('data-wall-id', newWall.id);
+
+    // Debug: Verify the wall ID is set
+    console.log('Wall added and linked to line:', { wall: newWall, line });
+
+    console.log('Wall added and linked to line:', newWall);
+  }
+
+  clearWallDimensions() {
+    const dimensions = this.planElement.querySelectorAll('.dimension.wall');
+    dimensions.forEach((dimension) => dimension.remove());
+    console.log('Cleared previous wall dimensions.'); 
   }
 
   addPermanentLine(startX, startY, endX, endY) {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", startX);
-    line.setAttribute("y1", startY);
-    line.setAttribute("x2", endX);
-    line.setAttribute("y2", endY);
-    line.setAttribute("stroke", "black");
-    line.setAttribute("stroke-width", "2");
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', startX);
+    line.setAttribute('y1', startY);
+    line.setAttribute('x2', endX);
+    line.setAttribute('y2', endY);
+    line.setAttribute('stroke', 'black');
+    line.setAttribute('stroke-width', '2');
+    line.classList.add('wall-line'); // Add wall-line class
     this.planElement.appendChild(line);
 
-    // Calculate and display the line's real-world length using SCALING_FACTOR
-    const realWorldLength = this.calculateLineLength(
-        startX / SCALING_FACTOR,
-        startY / SCALING_FACTOR,
-        endX / SCALING_FACTOR,
-        endY / SCALING_FACTOR
-    );
-
-    this.addDimension(
-        this.planElement,
-        startX,
-        startY,
-        endX,
-        endY,
-        `${realWorldLength} m`
-    );
-  } 
+    console.log('Permanent line added.');
+    return line; // Return the created line element
+  }
 
   detectEdgeIntersections(newWall) {
     const intersections = [];
@@ -644,6 +573,7 @@ export default class PlanController {
     dimensionLine.setAttribute('y2', endY);
     dimensionLine.setAttribute('stroke', 'gray');
     dimensionLine.setAttribute('stroke-dasharray', '5,5');
+    dimensionLine.classList.add('dimension'); // Add 'dimension' class
     svgElement.appendChild(dimensionLine);
 
     // Add dimension text
@@ -664,60 +594,62 @@ export default class PlanController {
     dimensionText.setAttribute('text-anchor', TEXT_STYLE.textAnchor);
     dimensionText.textContent = label;
 
+    dimensionText.classList.add('dimension'); // Add 'dimension' class
     svgElement.appendChild(dimensionText);
+
+    return dimensionLine; // Return the line for further manipulation
   }
+
   
   drawWallPlan(svgElement) {
     if (!svgElement) {
-      console.error('Wall plan SVG element is undefined.');
-      return;
+        console.error('Wall plan SVG element is undefined.');
+        return;
     }
-  
+
     console.log('Rendering wall plan...');
-  
+
     // Clear existing elements
     while (svgElement.firstChild) {
-      svgElement.removeChild(svgElement.firstChild);
+        svgElement.removeChild(svgElement.firstChild);
     }
-  
+
     const planWidth = this.buildingModel.length * SCALING_FACTOR;
     const planHeight = this.buildingModel.width * SCALING_FACTOR;
-  
-    if (!planWidth || !planHeight) {
-      console.error('Cannot render wall plan. Missing or invalid dimensions.');
-      return;
+
+    if (!planWidth || !planHeight || planWidth <= 0 || planHeight <= 0) {
+        console.error('Cannot render wall plan. Missing or invalid dimensions.');
+        alert('Please set valid dimensions for the wall plan.');
+        return; // Stop rendering if dimensions are invalid
     }
-  
+
     // Resize and center the SVG
     this.resizeAndCenter(svgElement, planWidth, planHeight);
-  
+
     // Draw the building outline
     const outline = [
-      { x1: 0, y1: 0, x2: planWidth, y2: 0, type: 'top' }, // Top edge
-      { x1: planWidth, y1: 0, x2: planWidth, y2: planHeight, type: 'right' }, // Right edge
-      { x1: planWidth, y1: planHeight, x2: 0, y2: planHeight, type: 'bottom' }, // Bottom edge
-      { x1: 0, y1: planHeight, x2: 0, y2: 0, type: 'left' } // Left edge
+        { x1: 0, y1: 0, x2: planWidth, y2: 0 }, // Top edge
+        { x1: planWidth, y1: 0, x2: planWidth, y2: planHeight }, // Right edge
+        { x1: planWidth, y1: planHeight, x2: 0, y2: planHeight }, // Bottom edge
+        { x1: 0, y1: planHeight, x2: 0, y2: 0 } // Left edge
     ];
-  
-    // Save edge data for dynamic dimensions
-    this.edges = outline;
-  
+
     outline.forEach((line) => {
-      const wallLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      wallLine.setAttribute('x1', line.x1);
-      wallLine.setAttribute('y1', line.y1);
-      wallLine.setAttribute('x2', line.x2);
-      wallLine.setAttribute('y2', line.y2);
-      wallLine.setAttribute('stroke', 'black');
-      wallLine.setAttribute('stroke-width', 2);
-      svgElement.appendChild(wallLine);
+        const wallLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        wallLine.setAttribute('x1', line.x1);
+        wallLine.setAttribute('y1', line.y1);
+        wallLine.setAttribute('x2', line.x2);
+        wallLine.setAttribute('y2', line.y2);
+        wallLine.setAttribute('stroke', 'black');
+        wallLine.setAttribute('stroke-width', 2);
+        svgElement.appendChild(wallLine);
     });
-  
+
     // Add initial dimensions
     this.updateDimensions(svgElement, planWidth, planHeight);
-  
+
     console.log('Wall plan drawn successfully.');
-  }   
+  }
   
   drawFloorPlan(svgElement) {
     if (!svgElement) {
@@ -850,4 +782,218 @@ export default class PlanController {
   
     resizeObserver.observe(planViewer);
   }  
+
+
+  //Edit wall method starts here
+  initializeEditWallButton() {
+    if (this.isEditWallButtonInitialized) return; // Prevent re-initialization
+    this.isEditWallButtonInitialized = true;
+
+    const editWallButton = document.getElementById('edit-wall');
+
+    if (!editWallButton) {
+        console.error('Edit Wall button not found.');
+        return;
+    }
+
+    editWallButton.addEventListener('click', () => {
+        this.toggleEditWallMode();
+    });
+
+    console.log('Edit Wall button initialized.');
+  }
+
+  toggleEditWallMode() {
+    if (this.isTogglingEditWallMode) return; // Prevent re-entry
+    this.isTogglingEditWallMode = true;
+
+    this.isEditWallMode = !this.isEditWallMode;
+
+    if (this.isEditWallMode) {
+        console.log('Edit Wall mode enabled.');
+        this.enableLineEditing();
+    } else {
+        console.log('Edit Wall mode disabled.');
+        this.disableLineEditing();
+    }
+
+    setTimeout(() => {
+        this.isTogglingEditWallMode = false; // Reset flag after execution
+    }, 0);  
+  }
+
+  enableLineEditing() {
+    if (this.isLineEditingEnabled) return; // Prevent duplicate enabling
+    this.isLineEditingEnabled = true;
+
+    const lines = this.planElement.querySelectorAll('.wall-line');
+    lines.forEach((line) => {
+        line.addEventListener('mouseenter', this.onLineHoverEnter.bind(this));
+        line.addEventListener('mouseleave', this.onLineHoverLeave.bind(this));
+        line.addEventListener('click', this.onLineClick.bind(this));
+    });
+
+    console.log('Line editing enabled.');
+  }
+
+  disableLineEditing() {
+    if (!this.isLineEditingEnabled) return; // Prevent duplicate disabling
+    this.isLineEditingEnabled = false;
+
+    const lines = this.planElement.querySelectorAll('.wall-line');
+    lines.forEach((line) => {
+        line.removeEventListener('mouseenter', this.onLineHoverEnter.bind(this));
+        line.removeEventListener('mouseleave', this.onLineHoverLeave.bind(this));
+        line.removeEventListener('click', this.onLineClick.bind(this));
+    });
+
+    console.log('Line editing disabled.');
+  }
+
+  onLineHoverEnter(event) {
+    const hoveredLine = event.target;
+
+    // Ensure the hovered element is a wall line
+    if (hoveredLine.classList.contains('wall-line')) {
+        hoveredLine.style.cursor = 'pointer'; // Change cursor to pointer
+    }
+  }
+
+  onLineHoverLeave(event) {
+    const hoveredLine = event.target;
+
+    // Reset cursor style
+    if (hoveredLine.classList.contains('wall-line')) {
+        hoveredLine.style.cursor = 'default'; // Reset to default cursor
+    }
+  }
+
+  onLineClick(event) {
+    const selectedLine = event.target;
+
+    // Ensure only wall lines can be selected
+    if (!selectedLine.classList.contains('wall-line')) {
+        return;
+    }
+
+    // Remove highlight from previously selected lines
+    const allLines = this.planElement.querySelectorAll('.wall-line');
+    allLines.forEach(line => line.classList.remove('selected-line'));
+
+    // Highlight the clicked line
+    selectedLine.classList.add('selected-line');
+
+    // Remove any existing floating button
+    const existingButton = document.getElementById('remove-line-button');
+    if (existingButton) existingButton.remove();
+
+    // Create a floating button
+    const button = document.createElement('button');
+    button.id = 'remove-line-button';
+    button.textContent = '🗑️'; // Trash bin icon
+    button.style.position = 'absolute';
+    button.style.zIndex = '1000';
+    button.style.background = '#f44336'; // Red background
+    button.style.color = 'white';
+    button.style.border = 'none';
+    button.style.borderRadius = '50%';
+    button.style.width = '30px';
+    button.style.height = '30px';
+    button.style.cursor = 'pointer';
+    button.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
+
+    // Get the x2 and y2 coordinates of the line
+    const x2 = parseFloat(selectedLine.getAttribute('x2'));
+    const y2 = parseFloat(selectedLine.getAttribute('y2'));
+
+    // Transform the coordinates from SVG to screen space
+    const point = this.planElement.createSVGPoint();
+    point.x = x2;
+    point.y = y2;
+    const transformedPoint = point.matrixTransform(this.planElement.getScreenCTM());
+
+    // Position the button slightly to the right of the line's end point
+    button.style.left = `${transformedPoint.x + 10}px`; // Offset 10px to the right
+    button.style.top = `${transformedPoint.y - 15}px`; // Center vertically with a 15px adjustment
+
+    // Attach click handler to remove the line
+    button.addEventListener('click', () => {
+        this.removeLine(selectedLine, button);
+    });
+
+    // Append the button to the document
+    document.body.appendChild(button);
+  }
+
+  removeLine(line, button) {
+    // Get the wall ID linked to the line
+    const wallId = line.getAttribute('data-wall-id');
+
+    if (!wallId) {
+        console.warn('Line is not linked to any wall. Skipping wall removal.');
+    } else {
+        // Find and remove the wall in the BuildingModel
+        const wallToRemove = this.buildingModel.getWalls().find(wall => wall.id === wallId);
+
+        if (wallToRemove) {
+            this.buildingModel.walls = this.buildingModel.getWalls().filter(wall => wall !== wallToRemove);
+            console.log('Wall removed from BuildingModel:', wallToRemove);
+
+            // Update the 3D scene
+            if (this.sceneController && typeof this.sceneController.updateScene === 'function') {
+                this.sceneController.updateScene(this.buildingModel.getWalls());
+                console.log('3D model updated to reflect wall removal.');
+            }
+        } else {
+            console.warn('Wall not found in BuildingModel. Skipping wall removal.');
+        }
+    }
+
+    // Remove the selected line
+    line.remove();
+
+    // Remove the floating delete button
+    button.remove();
+
+    console.log('Wall line removed.');
+  }
+
+  refreshDimensions() {
+    // Clear all existing dimensions
+    const existingDimensions = this.planElement.querySelectorAll('.dimension, .dimension-label');
+    existingDimensions.forEach(dim => dim.remove());
+
+    // Re-draw dimensions for all remaining walls
+    this.drawWallDimensions();
+    console.log('Refreshed all dimensions for remaining walls.');
+  }
+
+  onLineMouseDown(event) {
+    const selectedLine = event.target;
+    const initialMousePos = this.getMousePosition(event);
+
+    const initialX1 = parseFloat(selectedLine.getAttribute('x1'));
+    const initialY1 = parseFloat(selectedLine.getAttribute('y1'));
+    const initialX2 = parseFloat(selectedLine.getAttribute('x2'));
+    const initialY2 = parseFloat(selectedLine.getAttribute('y2'));
+
+    const onMouseMove = (moveEvent) => {
+        const currentMousePos = this.getMousePosition(moveEvent);
+        const dx = currentMousePos.x - initialMousePos.x;
+        const dy = currentMousePos.y - initialMousePos.y;
+
+        selectedLine.setAttribute('x1', initialX1 + dx);
+        selectedLine.setAttribute('y1', initialY1 + dy);
+        selectedLine.setAttribute('x2', initialX2 + dx);
+        selectedLine.setAttribute('y2', initialY2 + dy);
+    };
+
+    const onMouseUp = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }
 }

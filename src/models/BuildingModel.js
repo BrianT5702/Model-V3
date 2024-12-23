@@ -11,9 +11,19 @@ export default class BuildingModel {
 
   // Add a wall to the building
   addWall(startX, startZ, endX, endZ, width, height) {
-    const wall = new WallModel(startX, startZ, endX, endZ, width, height);
+    const wall = {
+        id: `wall-${Date.now()}-${Math.random().toString(16).slice(2)}`, // Unique ID
+        startX,
+        startZ,
+        endX,
+        endZ,
+        width,
+        height
+    };
+
     this.walls.push(wall);
-    console.log("Wall added to BuildingModel:", wall);
+    console.log('Wall added to BuildingModel:', wall);
+    return wall; // Return the created wall
   }
 
   // Remove a wall by its unique identifier
