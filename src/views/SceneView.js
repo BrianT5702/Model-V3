@@ -35,28 +35,29 @@ export default class SceneView {
 
   attachToContainer(containerId) {
     const container = document.getElementById(containerId);
-    const content = container.querySelector('#floating-3d-content') || container;
-
+  
+    if (!container) {
+      console.error(`Container with ID '${containerId}' not found.`);
+      return;
+    }
+  
     // Prevent redundant attachment
-    if (this.currentParent === content) {
-        console.log(`Renderer already attached to: ${containerId}`);
-        return;
+    if (this.currentParent === container) {
+      console.log(`Renderer already attached to: ${containerId}`);
+      return;
     }
-
+  
     if (this.currentParent) {
-        this.currentParent.removeChild(this.renderer.domElement); // Remove from previous parent
-        console.log(`Renderer detached from: ${this.currentParent.id}`);
+      this.currentParent.removeChild(this.renderer.domElement); // Remove from previous parent
+      console.log(`Renderer detached from: ${this.currentParent.id}`);
     }
-
-    content.appendChild(this.renderer.domElement); // Attach to new parent
-    this.currentParent = content;
+  
+    container.appendChild(this.renderer.domElement); // Attach to new parent
+    this.currentParent = container;
+  
     console.log(`Renderer attached to: ${containerId}`);
-
-    // Update renderer size
-    this.renderer.setSize(content.clientWidth, content.clientHeight);
-    this.camera.aspect = content.clientWidth / content.clientHeight;
-    this.camera.updateProjectionMatrix();
-}
+    this.resizeRenderer(); // Adjust size
+  }
 
 onWindowResize() {
   if (this.currentParent) {

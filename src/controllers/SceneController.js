@@ -4,9 +4,13 @@ import SceneView from '../views/SceneView.js';
 import { SCALING_FACTOR } from '../utils/Utils.js';
 
 export default class SceneController {
-  constructor() {
+  constructor(buildingModel) {
     this.sceneView = new SceneView();
-  }
+    this.buildingModel = buildingModel;
+  
+    // Attach the scene view to the main container
+    this.sceneView.attachToContainer('main-3d-view');
+  }  
 
   // Create a 3D representation of the building
   createBuilding(length, width, height, thickness) {
@@ -93,7 +97,9 @@ export default class SceneController {
   }
 
   // Update the scene with walls from the 2D plan
-  updateScene(walls) {
+  updateScene() {
+    const walls = this.buildingModel.getWalls();
+
     // Remove previous wall objects
     this.sceneView.scene.children = this.sceneView.scene.children.filter(
       (child) => child.userData.type !== 'wall'
@@ -102,7 +108,7 @@ export default class SceneController {
     // Add new walls
     walls.forEach((wall) => this.addWallToScene(wall));
   }
-
+  
   // Add an individual wall to the 3D scene
   addWallToScene(wall) {
     const { startX, startZ, endX, endZ, width, height } = wall;
