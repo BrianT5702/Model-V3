@@ -62,7 +62,7 @@ export default class SceneController {
   // Create default walls around the perimeter of the building
   createDefaultWalls(length, width, height, thickness) {
     const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
-
+  
     // Front Wall
     const frontWall = new THREE.Mesh(
       new THREE.BoxGeometry(length, height, thickness),
@@ -70,7 +70,8 @@ export default class SceneController {
     );
     frontWall.position.set(0, height / 2, width / 2 - thickness / 2);
     this.sceneView.scene.add(frontWall);
-
+    this.buildingModel.addWall(-length / 2, width / 2, length / 2, width / 2, thickness, height);
+  
     // Back Wall
     const backWall = new THREE.Mesh(
       new THREE.BoxGeometry(length, height, thickness),
@@ -78,7 +79,8 @@ export default class SceneController {
     );
     backWall.position.set(0, height / 2, -width / 2 + thickness / 2);
     this.sceneView.scene.add(backWall);
-
+    this.buildingModel.addWall(-length / 2, -width / 2, length / 2, -width / 2, thickness, height);
+  
     // Left Wall
     const leftWall = new THREE.Mesh(
       new THREE.BoxGeometry(thickness, height, width),
@@ -86,7 +88,8 @@ export default class SceneController {
     );
     leftWall.position.set(-length / 2 + thickness / 2, height / 2, 0);
     this.sceneView.scene.add(leftWall);
-
+    this.buildingModel.addWall(-length / 2, width / 2, -length / 2, -width / 2, thickness, height);
+  
     // Right Wall
     const rightWall = new THREE.Mesh(
       new THREE.BoxGeometry(thickness, height, width),
@@ -94,6 +97,7 @@ export default class SceneController {
     );
     rightWall.position.set(length / 2 - thickness / 2, height / 2, 0);
     this.sceneView.scene.add(rightWall);
+    this.buildingModel.addWall(length / 2, width / 2, length / 2, -width / 2, thickness, height);
   }
 
   // Update the scene with walls from the 2D plan

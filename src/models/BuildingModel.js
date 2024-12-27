@@ -12,25 +12,32 @@ export default class BuildingModel {
   // Add a wall to the building
   addWall(startX, startZ, endX, endZ, width, height) {
     const wall = {
-        id: `wall-${Date.now()}-${Math.random().toString(16).slice(2)}`, // Unique ID
-        startX,
-        startZ,
-        endX,
-        endZ,
-        width,
-        height
+      id: `wall-${Date.now()}-${Math.random().toString(16).slice(2)}`, // Unique ID
+      startX,
+      startZ,
+      endX,
+      endZ,
+      width,
+      height
     };
   
-    console.log('Adding wall:', wall);
+    console.log('Adding wall to BuildingModel:', wall);
     this.walls.push(wall);
     console.log('Current walls after addition:', this.walls);
     return wall; // Return the created wall
-  }  
+  } 
 
   // Remove a wall by its unique identifier
   removeWall(wallId) {
-    this.walls = this.walls.filter(wall => wall.id !== wallId);
-    console.log(`Wall with ID ${wallId} removed. Remaining walls:`, this.walls);
+    const wallIndex = this.walls.findIndex((wall) => wall.id === wallId);
+    if (wallIndex !== -1) {
+        const removedWall = this.walls.splice(wallIndex, 1)[0];
+        console.log(`Removed wall:`, removedWall);
+        return removedWall;
+    } else {
+        console.warn(`Wall with ID ${wallId} not found.`);
+        return null;
+    }
   }
 
   // Get all walls in the building

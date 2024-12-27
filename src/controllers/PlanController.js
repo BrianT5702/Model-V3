@@ -51,33 +51,36 @@ export default class PlanController {
   
   updateWallDimensions() {
     console.log('Updating wall dimensions...');
-    const svgElement = this.planElement; // Reference to the wall-plan SVG
+    const svgElement = this.planElement;
+  
     if (!svgElement) {
-        console.error('Wall plan SVG element is undefined.');
-        return;
+      console.error('Wall plan SVG element is undefined.');
+      return;
     }
-
+  
     // Clear existing wall-specific dimensions
-    const wallDimensions = svgElement.querySelectorAll('.dimension.wall');
-    wallDimensions.forEach((dim) => dim.remove());
-
+    this.clearWallDimensions();
+  
     const walls = this.buildingModel.getWalls();
-
-    // Iterate over each wall and redraw its dimensions
     walls.forEach((wall) => {
-        const wallLength = this.calculateLineLength(wall.startX, wall.startZ, wall.endX, wall.endZ);
-        this.addDimension(
-            this.planElement,
-            wall.startX * SCALING_FACTOR,
-            wall.startZ * SCALING_FACTOR,
-            wall.endX * SCALING_FACTOR,
-            wall.endZ * SCALING_FACTOR,
-            `${wallLength} m`
-        ).classList.add('wall');
+      const wallLength = this.calculateLineLength(
+        wall.startX, wall.startZ,
+        wall.endX, wall.endZ
+      );
+  
+      this.addDimension(
+        svgElement,
+        wall.startX * SCALING_FACTOR,
+        wall.startZ * SCALING_FACTOR,
+        wall.endX * SCALING_FACTOR,
+        wall.endZ * SCALING_FACTOR,
+        `${wallLength.toFixed(2)} m`,
+        { isVertical: false }
+      );
     });
-
+  
     console.log('Wall dimensions updated.');
-  }
+  }  
 
   drawSplitDimensions(svgElement, wall, intersectionPoints) {
     const { startX, startZ, endX, endZ } = wall;
@@ -370,7 +373,7 @@ export default class PlanController {
     const startCoords = this.convertTo3DCoordinates(clampedStart.x, clampedStart.y);
     const endCoords = this.convertTo3DCoordinates(clampedEnd.x, clampedEnd.y);
   
-    // Add the wall to the centralized BuildingModel
+    // Add the wall to the BuildingModel
     const newWall = this.buildingModel.addWall(
       startCoords.x,
       startCoords.z,
@@ -381,13 +384,14 @@ export default class PlanController {
     );
   
     if (!newWall || !newWall.id) {
-      console.error('Failed to create wall. Aborting line creation.');
+      console.error('Failed to create wall. Aborting wall addition.');
       return;
     }
   
+    console.log('Wall added to BuildingModel:', newWall);
+  
     // Sync the 3D scene with the new wall
     this.sceneController.updateScene(this.buildingModel.getWalls());
-    console.log('3D model updated with new wall.');
   
     // Create the corresponding line in the 2D plan
     const line = this.addPermanentLine(clampedStart.x, clampedStart.y, clampedEnd.x, clampedEnd.y);
@@ -591,7 +595,9 @@ export default class PlanController {
     }
   }
   
-  addDimension(svgElement, startX, startY, endX, endY, label, isVertical = false) {
+  addDimension(svgElement, startX, startY, endX, endY, label, options = {}) {
+    const { isVertical = false, offset = 10 } = options;
+  
     // Add dimension line
     const dimensionLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     dimensionLine.setAttribute('x1', startX);
@@ -600,33 +606,35 @@ export default class PlanController {
     dimensionLine.setAttribute('y2', endY);
     dimensionLine.setAttribute('stroke', 'gray');
     dimensionLine.setAttribute('stroke-dasharray', '5,5');
-    dimensionLine.classList.add('dimension'); // Add 'dimension' class
+    dimensionLine.classList.add('dimension');
     svgElement.appendChild(dimensionLine);
-
-    // Add dimension text
+  
+    // Calculate label position
     const midX = (startX + endX) / 2;
     const midY = (startY + endY) / 2;
-
+    const labelX = isVertical ? midX - offset : midX;
+    const labelY = isVertical ? midY : midY - offset;
+  
+    // Add dimension label
     const dimensionText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    dimensionText.setAttribute('x', isVertical ? startX - 10 : midX);
-    dimensionText.setAttribute('y', isVertical ? midY : startY - 10);
-
+    dimensionText.setAttribute('x', labelX);
+    dimensionText.setAttribute('y', labelY);
+  
     if (isVertical) {
-        dimensionText.setAttribute('transform', `rotate(-90, ${startX - 10}, ${midY})`);
+      dimensionText.setAttribute('transform', `rotate(-90, ${labelX}, ${labelY})`);
     }
-
+  
     dimensionText.setAttribute('fill', TEXT_STYLE.fill);
     dimensionText.setAttribute('font-size', TEXT_STYLE.fontSize);
     dimensionText.setAttribute('font-family', TEXT_STYLE.fontFamily);
     dimensionText.setAttribute('text-anchor', TEXT_STYLE.textAnchor);
     dimensionText.textContent = label;
-
-    dimensionText.classList.add('dimension'); // Add 'dimension' class
+  
+    dimensionText.classList.add('dimension-label');
     svgElement.appendChild(dimensionText);
-
-    return dimensionLine; // Return the line for further manipulation
+  
+    return dimensionLine; // Return the line for further use if needed
   }
-
   
   drawWallPlan(svgElement) {
     if (!svgElement) {
@@ -766,6 +774,7 @@ export default class PlanController {
       return;
     }
   
+    // Calculate the new viewBox size with padding
     const viewBoxWidth = contentWidth + padding * 2;
     const viewBoxHeight = contentHeight + padding * 2;
   
@@ -774,7 +783,7 @@ export default class PlanController {
       `-${padding} -${padding} ${viewBoxWidth} ${viewBoxHeight}`
     );
   
-    console.log('SVG resized and centered.');
+    console.log('SVG resized and centered to fit content.');
   }  
   
   // Attach a resize listener to the plan viewer
@@ -953,83 +962,35 @@ export default class PlanController {
   }
 
   removeLine(line) {
+    // Retrieve the wall ID from the selected line
     const wallId = line.getAttribute('data-wall-id');
-  
-    if (!wallId) {
-      console.warn('Line is not linked to any wall. Skipping wall removal.');
-      return;
-    }
-  
-    console.log('Current walls in BuildingModel:', this.buildingModel.getWalls());
-  
-    // Remove wall from BuildingModel
-    const wallToRemove = this.buildingModel.getWallById(wallId);
-  
-    if (wallToRemove) {
-      this.buildingModel.removeWall(wallId);
-      console.log('Wall removed from BuildingModel:', wallToRemove);
-  
-      // Update the 3D scene
-      if (this.sceneController && typeof this.sceneController.updateScene === 'function') {
-        this.sceneController.updateScene(this.buildingModel.getWalls());
-        console.log('3D model updated to reflect wall removal.');
-      }
-    } else {
-      console.error(`Wall with ID ${wallId} not found in BuildingModel. Possible data mismatch.`);
-    }
-  
-    // Remove the line from SVG
-    line.remove();
-    console.log('Wall line removed from 2D plan.');
-  
-    // Refresh dimensions after wall removal
-    try {
-      this.refreshDimensions();
-    } catch (error) {
-      console.error('Error refreshing dimensions:', error);
-    }
-  }  
 
-  refreshDimensions() {
-    // Clear all existing dimensions
-    const existingDimensions = this.planElement.querySelectorAll('.dimension, .dimension-label');
-    existingDimensions.forEach((dimension) => dimension.remove());
-    console.log('Cleared previous dimensions.');
-  
-    // Re-draw dimensions for all remaining walls
-    const walls = this.buildingModel.getWalls();
-  
-    if (!walls || walls.length === 0) {
-      console.log('No walls found. No dimensions to draw.');
-      return; // Nothing to draw
+    if (!wallId) {
+        console.warn('Line does not have an associated wall ID. Skipping removal.');
+        return;
     }
-  
-    walls.forEach((wall) => {
-      const wallLength = this.calculateLineLength(
-        wall.startX,
-        wall.startZ,
-        wall.endX,
-        wall.endZ
-      );
-  
-      if (isNaN(wallLength) || typeof wallLength !== 'number') {
-        console.warn('Invalid wall length detected:', wall, wallLength);
-        return; // Skip this wall if the length is invalid
-      }
-  
-      // Draw dimension line
-      this.addDimension(
-        this.planElement,
-        wall.startX * SCALING_FACTOR,
-        wall.startZ * SCALING_FACTOR,
-        wall.endX * SCALING_FACTOR,
-        wall.endZ * SCALING_FACTOR,
-        `${wallLength.toFixed(2)} m`
-      );
-    });
-  
-    console.log('Refreshed all dimensions for remaining walls.');
-  }  
+
+    console.log('Removing wall with ID:', wallId);
+
+    // Remove the wall from the BuildingModel
+    const wallRemoved = this.buildingModel.removeWall(wallId);
+
+    if (wallRemoved) {
+        console.log('Wall successfully removed:', wallRemoved);
+
+        // Remove the line from the SVG
+        line.remove();
+        console.log('Line successfully removed from the SVG.');
+
+        // Update the 3D scene with the remaining walls
+        if (this.sceneController && typeof this.sceneController.updateScene === 'function') {
+            this.sceneController.updateScene(this.buildingModel.getWalls());
+            console.log('3D model updated to reflect wall removal.');
+        }
+    } else {
+        console.warn(`Wall with ID ${wallId} not found in BuildingModel.`);
+    }
+  }
 
   onLineMouseDown(event) {
     const selectedLine = event.target;
