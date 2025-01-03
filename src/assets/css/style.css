@@ -152,13 +152,6 @@ body {
     display: none;
 }
 
-/* Dimension text styling */
-svg text {
-    font-family: Arial, sans-serif;
-    fill: blue; /* Dimension text color */
-    font-size: 14px;
-}
-
 svg line[stroke-dasharray] {
     stroke: gray; /* Dimension line color */
 }

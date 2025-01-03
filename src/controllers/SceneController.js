@@ -62,52 +62,63 @@ export default class SceneController {
   // Create default walls around the perimeter of the building
   createDefaultWalls(length, width, height, thickness) {
     const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
-  
+
     // Front Wall
     const frontWall = new THREE.Mesh(
-      new THREE.BoxGeometry(length, height, thickness),
-      wallMaterial
+        new THREE.BoxGeometry(length, height, thickness),
+        wallMaterial
     );
     frontWall.position.set(0, height / 2, width / 2 - thickness / 2);
+    frontWall.userData.type = 'wall';
+    frontWall.userData.isDefaultWall = true; // Mark as default wall
     this.sceneView.scene.add(frontWall);
-    this.buildingModel.addWall(-length / 2, width / 2, length / 2, width / 2, thickness, height);
-  
+
     // Back Wall
     const backWall = new THREE.Mesh(
-      new THREE.BoxGeometry(length, height, thickness),
-      wallMaterial
+        new THREE.BoxGeometry(length, height, thickness),
+        wallMaterial
     );
     backWall.position.set(0, height / 2, -width / 2 + thickness / 2);
+    backWall.userData.type = 'wall';
+    backWall.userData.isDefaultWall = true; // Mark as default wall
     this.sceneView.scene.add(backWall);
-    this.buildingModel.addWall(-length / 2, -width / 2, length / 2, -width / 2, thickness, height);
-  
+
     // Left Wall
     const leftWall = new THREE.Mesh(
-      new THREE.BoxGeometry(thickness, height, width),
-      wallMaterial
+        new THREE.BoxGeometry(thickness, height, width),
+        wallMaterial
     );
     leftWall.position.set(-length / 2 + thickness / 2, height / 2, 0);
+    leftWall.userData.type = 'wall';
+    leftWall.userData.isDefaultWall = true; // Mark as default wall
     this.sceneView.scene.add(leftWall);
-    this.buildingModel.addWall(-length / 2, width / 2, -length / 2, -width / 2, thickness, height);
-  
+
     // Right Wall
     const rightWall = new THREE.Mesh(
-      new THREE.BoxGeometry(thickness, height, width),
-      wallMaterial
+        new THREE.BoxGeometry(thickness, height, width),
+        wallMaterial
     );
     rightWall.position.set(length / 2 - thickness / 2, height / 2, 0);
+    rightWall.userData.type = 'wall';
+    rightWall.userData.isDefaultWall = true; // Mark as default wall
     this.sceneView.scene.add(rightWall);
-    this.buildingModel.addWall(length / 2, width / 2, length / 2, -width / 2, thickness, height);
   }
 
   // Update the scene with walls from the 2D plan
   updateScene() {
     const walls = this.buildingModel.getWalls();
 
-    // Remove previous wall objects
-    this.sceneView.scene.children = this.sceneView.scene.children.filter(
-      (child) => child.userData.type !== 'wall'
-    );
+    // Remove non-default wall objects
+    this.sceneView.scene.children = this.sceneView.scene.children.filter((child) => {
+        if (child.userData.type === 'wall' && child.userData.isDefaultWall) {
+            return true; // Keep default walls
+        }
+        if (child.userData.type === 'wall') {
+            console.log(`Removing non-default wall with ID: ${child.userData.wallId}`);
+            return false; // Remove non-default walls
+        }
+        return true; // Keep other objects
+    });
 
     // Add new walls
     walls.forEach((wall) => this.addWallToScene(wall));
@@ -116,6 +127,15 @@ export default class SceneController {
   // Add an individual wall to the 3D scene
   addWallToScene(wall) {
     const { startX, startZ, endX, endZ, width, height } = wall;
+
+    // Check if the wall already exists in the scene
+    const existingWall = this.sceneView.scene.children.find(
+        (child) => child.userData.wallId === wall.id
+    );
+    if (existingWall) {
+        console.log(`Wall with ID ${wall.id} already exists in the scene. Skipping addition.`);
+        return;
+    }
 
     // Calculate wall length and rotation
     const wallLength = Math.sqrt((endX - startX) ** 2 + (endZ - startZ) ** 2);
@@ -128,13 +148,15 @@ export default class SceneController {
     const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
     const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
 
-    // Set position and rotation
+    // Set position, rotation, and userData
     wallMesh.position.set(centerX, height / 2, centerZ);
     wallMesh.rotation.y = -angle;
-    wallMesh.userData.type = 'wall'; // Mark it as a wall for future updates
+    wallMesh.userData.type = 'wall'; // Mark it as a wall
+    wallMesh.userData.wallId = wall.id; // Assign a unique ID for tracking
+    wallMesh.userData.isDefaultWall = wall.isDefaultWall || false; // Mark as default or non-default
 
     this.sceneView.scene.add(wallMesh);
-    console.log(`Wall added at (${centerX}, ${height / 2}, ${centerZ})`);
+    console.log(`Wall added to 3D scene with ID: ${wall.id}`);
   }
 
   // Toggle between interior and exterior views

@@ -10,34 +10,37 @@ export default class BuildingModel {
   }
 
   // Add a wall to the building
-  addWall(startX, startZ, endX, endZ, width, height) {
+  addWall(startX, startZ, endX, endZ, width, height, id = null) {
     const wall = {
-      id: `wall-${Date.now()}-${Math.random().toString(16).slice(2)}`, // Unique ID
-      startX,
-      startZ,
-      endX,
-      endZ,
-      width,
-      height
+        id: id || `wall-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        startX,
+        startZ,
+        endX,
+        endZ,
+        width,
+        height,
+        innerLine: null, // New property for inner wall line
+        outerLine: null, // New property for outer wall line
     };
-  
-    console.log('Adding wall to BuildingModel:', wall);
     this.walls.push(wall);
-    console.log('Current walls after addition:', this.walls);
-    return wall; // Return the created wall
-  } 
+    console.log('Adding wall to BuildingModel:', wall);
+    return wall; // Return the wall
+  }
 
   // Remove a wall by its unique identifier
   removeWall(wallId) {
-    const wallIndex = this.walls.findIndex((wall) => wall.id === wallId);
-    if (wallIndex !== -1) {
-        const removedWall = this.walls.splice(wallIndex, 1)[0];
-        console.log(`Removed wall:`, removedWall);
-        return removedWall;
-    } else {
-        console.warn(`Wall with ID ${wallId} not found.`);
-        return null;
+    const wallIndex = this.walls.findIndex(wall => wall.id === wallId);
+
+    if (wallIndex === -1) {
+        console.warn(`Wall with ID ${wallId} not found in BuildingModel.`);
+        return false;
     }
+
+    // Remove the wall from the array
+    const removedWall = this.walls.splice(wallIndex, 1);
+    console.log(`Wall with ID ${wallId} successfully removed:`, removedWall);
+
+    return true;
   }
 
   // Get all walls in the building
